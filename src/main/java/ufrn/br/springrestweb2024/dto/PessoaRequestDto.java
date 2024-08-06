@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PessoaDto {
+public class PessoaRequestDto {
     String nome;
     String dataNascimento;
     String sexo;

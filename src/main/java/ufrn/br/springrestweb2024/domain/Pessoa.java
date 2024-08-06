@@ -1,4 +1,4 @@
-package domain;
+package ufrn.br.springrestweb2024.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -18,6 +20,7 @@ public class Pessoa {
     private Long id;
     String nome;
     int idade;
-    Long dataNascimento;
+    String dataNascimento;
     String sexo;
+    boolean isAdmin = false;
 }
