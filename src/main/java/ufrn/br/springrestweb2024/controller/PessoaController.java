@@ -1,7 +1,10 @@
 package ufrn.br.springrestweb2024.controller;
 
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
+import org.apache.catalina.mapper.Mapper;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -14,6 +17,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+
 
 @RestController
 @RequestMapping("/pessoas/")
@@ -21,6 +26,7 @@ import java.util.Optional;
 public class PessoaController {
 
     private final PessoaService service;
+    private final ModelMapper mapper;
 
     @GetMapping
     public List<Pessoa> listAll() {
@@ -30,12 +36,9 @@ public class PessoaController {
     @PostMapping
     public ResponseEntity<PessoaResponseDto> create(@RequestBody PessoaRequestDto pessoa) {
 
-        Pessoa entityPessoa = new Pessoa();
-        entityPessoa.setNome(pessoa.getNome());
-        entityPessoa.setSexo(pessoa.getSexo());
-        entityPessoa.setDataNascimento(pessoa.getDataNascimento());
+        Pessoa entityPessoa = mapper.map(pessoa, Pessoa.class);
 
-        Pessoa created = service.create(entityPessoa);
+        Pessoa created =  service.create(entityPessoa);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -43,7 +46,11 @@ public class PessoaController {
                 .buildAndExpand(created.getId())
                 .toUri();
 
-        PessoaResponseDto pessoaResponseDto = new PessoaResponseDto(created.getNome(), created.getIdade(), created.getSexo());
+        PessoaResponseDto pessoaResponseDto = new PessoaResponseDto(created.getNome(), created.getIdade(), created.getSexo(), created.getEndereco());
+
+        pessoaResponseDto.add(linkTo(PessoaController.class).slash(created.getId()).withSelfRel());
+        pessoaResponseDto.add(linkTo(EnderecoController.class).slash(created.getEndereco().getId()).withRel("endereco"));
+
 
         return ResponseEntity.created(location).body(pessoaResponseDto);
     }
@@ -55,7 +62,7 @@ public class PessoaController {
         if (pessoaOptional.isPresent()) {
             return ResponseEntity.ok(pessoaOptional.get());
         }
-        return ResponseEntity.notFound().build();
+        throw new EntityNotFoundException("Pessoa id " + id + " not found");
     }
 
     @DeleteMapping("{id}")
@@ -65,7 +72,7 @@ public class PessoaController {
             service.deleteById(id);
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.notFound().build();
+        throw new EntityNotFoundException("Pessoa id " + id + " not found");
     }
 
     @PutMapping("{id}")
