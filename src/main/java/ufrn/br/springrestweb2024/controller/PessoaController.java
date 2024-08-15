@@ -1,10 +1,9 @@
 package ufrn.br.springrestweb2024.controller;
 
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
-import org.apache.catalina.mapper.Mapper;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -14,10 +13,8 @@ import ufrn.br.springrestweb2024.dto.PessoaResponseDto;
 import ufrn.br.springrestweb2024.service.PessoaService;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 
 @RestController
@@ -29,16 +26,25 @@ public class PessoaController {
     private final ModelMapper mapper;
 
     @GetMapping
-    public List<Pessoa> listAll() {
-        return service.listAll();
+    public List<PessoaResponseDto> listAll() {
+
+        List<PessoaResponseDto> responseDtos = new ArrayList<>();
+        List<Pessoa> pessoas = service.listAll();
+
+        for (Pessoa p : pessoas){
+            PessoaResponseDto responseDto = mapper.map(p, PessoaResponseDto.class);
+            responseDto.addLinks(p);
+            responseDtos.add(responseDto);
+        }
+
+        return responseDtos;
     }
 
     @PostMapping
     public ResponseEntity<PessoaResponseDto> create(@RequestBody PessoaRequestDto pessoa) {
 
         Pessoa entityPessoa = mapper.map(pessoa, Pessoa.class);
-
-        Pessoa created =  service.create(entityPessoa);
+        Pessoa created = service.create(entityPessoa);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -46,47 +52,41 @@ public class PessoaController {
                 .buildAndExpand(created.getId())
                 .toUri();
 
-        PessoaResponseDto pessoaResponseDto = new PessoaResponseDto(created.getNome(), created.getIdade(), created.getSexo(), created.getEndereco());
-
-        pessoaResponseDto.add(linkTo(PessoaController.class).slash(created.getId()).withSelfRel());
-        pessoaResponseDto.add(linkTo(EnderecoController.class).slash(created.getEndereco().getId()).withRel("endereco"));
-
+        PessoaResponseDto pessoaResponseDto = mapper.map(created, PessoaResponseDto.class);
+        pessoaResponseDto.addLinks(created);
 
         return ResponseEntity.created(location).body(pessoaResponseDto);
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<Pessoa> listById(@PathVariable("id") Long id) {
-        Optional<Pessoa> pessoaOptional = service.listById(id);
+    public ResponseEntity<PessoaResponseDto> listById(@PathVariable("id") Long id) {
 
-        if (pessoaOptional.isPresent()) {
-            return ResponseEntity.ok(pessoaOptional.get());
-        }
-        throw new EntityNotFoundException("Pessoa id " + id + " not found");
+        Pessoa p = service.listById(id);
+        PessoaResponseDto dto = mapper.map(p, PessoaResponseDto.class);
+
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteById(@PathVariable("id") Long id) {
-        Optional<Pessoa> pessoaOptional = service.listById(id);
-        if (pessoaOptional.isPresent()) {
-            service.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        throw new EntityNotFoundException("Pessoa id " + id + " not found");
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteById(@PathVariable("id") Long id) {
+        service.deleteById(id);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<Pessoa> update(@RequestBody Pessoa pessoa, @PathVariable("id") Long id) {
-        Optional<Pessoa> pessoaOptional = service.listById(id);
-        if (pessoaOptional.isPresent()) {
-            return ResponseEntity.ok(service.update(pessoa, id));
+    public ResponseEntity<PessoaResponseDto> update(@RequestBody PessoaRequestDto requestDto, @PathVariable("id") Long id) {
+
+        try {
+            Pessoa p = service.listById(id);
+        }catch (Exception e){
+            return this.create(requestDto);
         }
-        Pessoa created = service.create(pessoa);
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("{id}")
-                .buildAndExpand(created.getId())
-                .toUri();
-        return ResponseEntity.created(location).body(created);
+
+        Pessoa PessoaUpdated =  service.update(mapper.map(requestDto, Pessoa.class), id);
+        PessoaResponseDto pessoaResponseDto  = mapper.map(PessoaUpdated, PessoaResponseDto.class);
+
+        pessoaResponseDto.addLinks(PessoaUpdated);
+
+        return ResponseEntity.ok(pessoaResponseDto);
     }
 }

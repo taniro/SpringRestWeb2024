@@ -1,6 +1,8 @@
 package ufrn.br.springrestweb2024.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -24,17 +26,33 @@ public abstract class GenericService<T, ID, REPO extends JpaRepository<T, ID>> i
     }
 
     @Override
-    public Optional<T> listById(ID id) {
-        return repository.findById(id);
+    public T listById(ID id) {
+        Optional<T> optional = repository.findById(id);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        throw new EntityNotFoundException("Objeto de id " + id + " not found");
     }
 
     @Override
     public void deleteById(ID id) {
-        repository.deleteById(id);
+
+        T entity = this.listById(id);
+        this.repository.delete(entity);
     }
 
     @Override
     public T update(T entity, ID id) {
-        return repository.save(entity);
+        //Adicionar lógica de negócio para comparação dos objetos
+        //enviados e identificação de algum erro de update
+        return this.repository.saveAndFlush(entity);
     }
 }
+
+
+
+
+
+
+
+
