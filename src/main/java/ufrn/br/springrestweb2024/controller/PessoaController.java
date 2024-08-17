@@ -7,14 +7,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import ufrn.br.springrestweb2024.domain.Endereco;
 import ufrn.br.springrestweb2024.domain.Pessoa;
 import ufrn.br.springrestweb2024.dto.PessoaRequestDto;
 import ufrn.br.springrestweb2024.dto.PessoaResponseDto;
 import ufrn.br.springrestweb2024.service.PessoaService;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 
 @RestController
@@ -28,23 +30,14 @@ public class PessoaController {
     @GetMapping
     public List<PessoaResponseDto> listAll() {
 
-        List<PessoaResponseDto> responseDtos = new ArrayList<>();
-        List<Pessoa> pessoas = service.listAll();
+        return service.listAll().stream().map(this::convertToDto).collect(toList());
 
-        for (Pessoa p : pessoas){
-            PessoaResponseDto responseDto = mapper.map(p, PessoaResponseDto.class);
-            responseDto.addLinks(p);
-            responseDtos.add(responseDto);
-        }
-
-        return responseDtos;
     }
 
     @PostMapping
     public ResponseEntity<PessoaResponseDto> create(@RequestBody PessoaRequestDto pessoa) {
 
-        Pessoa entityPessoa = mapper.map(pessoa, Pessoa.class);
-        Pessoa created = service.create(entityPessoa);
+        Pessoa created = service.create(convertToEntity(pessoa));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -52,11 +45,9 @@ public class PessoaController {
                 .buildAndExpand(created.getId())
                 .toUri();
 
-        PessoaResponseDto pessoaResponseDto = mapper.map(created, PessoaResponseDto.class);
-        pessoaResponseDto.addLinks(created);
-
-        return ResponseEntity.created(location).body(pessoaResponseDto);
+        return ResponseEntity.created(location).body(convertToDto(created));
     }
+
 
     @GetMapping("{id}")
     public ResponseEntity<PessoaResponseDto> listById(@PathVariable("id") Long id) {
@@ -78,15 +69,24 @@ public class PessoaController {
 
         try {
             Pessoa p = service.listById(id);
-        }catch (Exception e){
+        } catch (Exception e) {
             return this.create(requestDto);
         }
 
-        Pessoa PessoaUpdated =  service.update(mapper.map(requestDto, Pessoa.class), id);
-        PessoaResponseDto pessoaResponseDto  = mapper.map(PessoaUpdated, PessoaResponseDto.class);
+        Pessoa PessoaUpdated = service.update(mapper.map(requestDto, Pessoa.class), id);
+        return ResponseEntity.ok(convertToDto(PessoaUpdated));
+    }
 
-        pessoaResponseDto.addLinks(PessoaUpdated);
+    private PessoaResponseDto convertToDto(Pessoa created) {
+        PessoaResponseDto pessoaResponseDto = mapper.map(created, PessoaResponseDto.class);
+        pessoaResponseDto.addLinks(created);
+        return pessoaResponseDto;
+    }
 
-        return ResponseEntity.ok(pessoaResponseDto);
+    private Pessoa convertToEntity(PessoaRequestDto pessoa) {
+        Pessoa entityPessoa = mapper.map(pessoa, Pessoa.class);
+        Endereco entityEndereco = mapper.map(pessoa.getEndereco(), Endereco.class);
+        entityPessoa.setEndereco(entityEndereco);
+        return entityPessoa;
     }
 }

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Data
 @SQLDelete(sql = "UPDATE pessoa SET deleted_at = CURRENT_TIMESTAMP where id=?")
-@SQLSelect(sql = "deleted_at is null")
+@SQLRestriction("deleted_at is null")
 public class Pessoa {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

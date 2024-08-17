@@ -19,7 +19,7 @@ public class PessoaResponseDto extends RepresentationModel<PessoaResponseDto> {
     String nome;
     int idade;
     String sexo;
-    Endereco endereco;
+    EnderecoResponseDto endereco;
 
     public void addLinks(Pessoa p){
         this.add(linkTo(PessoaController.class).slash(p.getId()).withSelfRel());
