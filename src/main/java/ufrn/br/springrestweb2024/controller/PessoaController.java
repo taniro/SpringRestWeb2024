@@ -3,6 +3,8 @@ package ufrn.br.springrestweb2024.controller;
 
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,10 +30,10 @@ public class PessoaController {
     private final ModelMapper mapper;
 
     @GetMapping
-    public List<PessoaResponseDto> listAll() {
+    public Page<PessoaResponseDto> listAll(Pageable pageable) {
 
-        return service.listAll().stream().map(this::convertToDto).collect(toList());
-
+        Page<Pessoa> pessoasPage = service.listAll(pageable);
+        return pessoasPage.map(this::convertToDto);
     }
 
     @PostMapping

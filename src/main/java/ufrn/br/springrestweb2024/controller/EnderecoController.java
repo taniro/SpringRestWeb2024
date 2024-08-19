@@ -2,6 +2,8 @@ package ufrn.br.springrestweb2024.controller;
 
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +20,7 @@ public class EnderecoController {
     EnderecoService service;
 
     @GetMapping
-    public List<Endereco> listaEnderecos(){
-        return service.listAll();
+    public Page<Endereco> listaEnderecos(Pageable pageable){
+        return service.listAll(pageable);
     }
 }

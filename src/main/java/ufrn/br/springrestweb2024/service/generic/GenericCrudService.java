@@ -1,17 +1,20 @@
-package ufrn.br.springrestweb2024.service;
+package ufrn.br.springrestweb2024.service.generic;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import ufrn.br.springrestweb2024.service.interfaces.ICrudService;
 
 
 import java.util.List;
 import java.util.Optional;
 
-public abstract class GenericService<T, ID, REPO extends JpaRepository<T, ID>> implements IService<T, ID>{
+public abstract class GenericCrudService<T, ID, REPO extends JpaRepository<T, ID>> implements ICrudService<T, ID> {
 
     private final REPO repository;
 
-    public GenericService(REPO repository) {
+    public GenericCrudService(REPO repository) {
         this.repository = repository;
     }
 
@@ -21,8 +24,8 @@ public abstract class GenericService<T, ID, REPO extends JpaRepository<T, ID>> i
     }
 
     @Override
-    public List<T> listAll() {
-        return repository.findAll();
+    public Page<T> listAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     @Override
